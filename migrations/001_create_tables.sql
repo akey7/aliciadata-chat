@@ -8,17 +8,6 @@ CREATE TABLE IF NOT EXISTS chats (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Documents table for storing resumes and job descriptions
-CREATE TABLE IF NOT EXISTS documents (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) UNIQUE NOT NULL,
-    resume TEXT,
-    jd TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Indexes for faster lookups
-CREATE INDEX idx_chats_session_uuid ON chats(session_uuid);
-CREATE INDEX idx_chats_timestamp ON chats(timestamp);
-CREATE INDEX idx_documents_name ON documents(name);
+CREATE INDEX IF NOT EXISTS idx_chats_session_uuid ON chats(session_uuid);
+CREATE INDEX IF NOT EXISTS idx_chats_timestamp ON chats(timestamp);

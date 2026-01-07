@@ -64,8 +64,21 @@ CREATE TABLE IF NOT EXISTS chats (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Documents table for storing resumes and job descriptions
-CREATE TABLE IF NOT EXISTS documents (
+-- Indexes for faster lookups
+CREATE INDEX IF NOT EXISTS idx_chats_session_uuid ON chats(session_uuid);
+CREATE INDEX IF NOT EXISTS idx_chats_timestamp ON chats(timestamp);
+```
+
+**Note**: This migration will be executed once manually before application deployment.
+
+### Documents Table (Managed Externally)
+
+The `documents` table is created and managed by another application. This application expects the following schema:
+
+```sql
+-- Documents table (managed by another application - DO NOT CREATE)
+-- Expected schema:
+CREATE TABLE documents (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
     resume TEXT,
@@ -74,13 +87,8 @@ CREATE TABLE IF NOT EXISTS documents (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for faster lookups
-CREATE INDEX idx_chats_session_uuid ON chats(session_uuid);
-CREATE INDEX idx_chats_timestamp ON chats(timestamp);
 CREATE INDEX idx_documents_name ON documents(name);
 ```
-
-**Note**: This migration will be executed once manually before application deployment.
 
 ## Core Components
 
