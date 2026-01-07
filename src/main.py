@@ -195,7 +195,7 @@ def create_interface():
 
         # Row 2: Chat interface
         chatbot = gr.Chatbot(
-            label="Chat with Career Advisor",
+            label="Chat with resume and job description",
             height=500,
         )
 
