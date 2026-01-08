@@ -123,17 +123,17 @@ def load_document_on_startup(request: gr.Request) -> Tuple[str, str, str, bool, 
 
 def chat_function(
     message: str,
-    history: List[List[str]],
+    history: List[dict],
     session_uuid: str,
     resume: str,
     jd: str
-) -> Tuple[List[List[str]], str]:
+) -> Tuple[List[dict], str]:
     """
     Process chat message with streaming.
 
     Args:
         message: User's message
-        history: Chat history in Gradio format [[user_msg, bot_msg], ...]
+        history: Chat history in Gradio format [{"role": "user", "content": "..."}, ...]
         session_uuid: Current session UUID
         resume: Resume content
         jd: Job description content
@@ -162,17 +162,20 @@ def chat_function(
         system_prompt = prompt_loader.render_prompt("", resume, jd)
 
     # Add current user message to history display
-    history = history + [[message, None]]
+    history = history + [{"role": "user", "content": message}]
     yield history, ""
 
     # Stream response from Claude
     full_response = ""
     stream_generator = chat_service.stream_message(api_messages, system_prompt)
 
+    # Add assistant message placeholder
+    history = history + [{"role": "assistant", "content": ""}]
+
     for chunk in stream_generator:
         full_response += chunk
         # Update the last message in history with accumulated response
-        history[-1][1] = full_response
+        history[-1]["content"] = full_response
         yield history, ""
 
     # Save assistant response to database
