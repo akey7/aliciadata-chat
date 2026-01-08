@@ -74,23 +74,29 @@ def load_template(template_path: str = "prompts/chat_system.mustache") -> Option
         return None
 
 
-def render_prompt(template: str, resume: str, jd: str) -> str:
+def render_prompt(template: str, resume: str, jd: str, email: Optional[str] = None) -> str:
     """
-    Render template with resume and job description context.
+    Render template with resume, job description, and email context.
 
     Args:
         template: Mustache template string
         resume: Resume content
         jd: Job description content
+        email: Applicant email address (defaults to APPLICANT_EMAIL env var)
 
     Returns:
-        str: Rendered prompt with resume and jd substituted
+        str: Rendered prompt with resume, jd, and email substituted
     """
     try:
+        # Get email from environment if not provided
+        if email is None:
+            email = os.getenv("APPLICANT_EMAIL", "")
+
         # Create context dictionary for Mustache
         context = {
             "resume": resume,
-            "jd": jd
+            "jd": jd,
+            "email": email
         }
 
         # Render the template using pystache
@@ -109,7 +115,7 @@ RESUME:
 JOB DESCRIPTION:
 {jd}
 
-Please provide thoughtful, specific feedback to help the candidate improve their resume for this position."""
+Please provide thoughtful, specific feedback to help the hiring manager evaluate fit for this position."""
 
 
 def get_system_prompt(resume: str, jd: str, template_path: str = "prompts/chat_system.mustache") -> Optional[str]:

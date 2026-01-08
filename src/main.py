@@ -123,17 +123,17 @@ def load_document_on_startup(request: gr.Request) -> Tuple[str, str, str, bool, 
 
 def chat_function(
     message: str,
-    history: List[List[str]],
+    history: List[dict],
     session_uuid: str,
     resume: str,
     jd: str
-) -> Tuple[List[List[str]], str]:
+) -> Tuple[List[dict], str]:
     """
     Process chat message with streaming.
 
     Args:
         message: User's message
-        history: Chat history in Gradio format [[user_msg, bot_msg], ...]
+        history: Chat history in Gradio format [{"role": "user", "content": "..."}, ...]
         session_uuid: Current session UUID
         resume: Resume content
         jd: Job description content
@@ -162,17 +162,20 @@ def chat_function(
         system_prompt = prompt_loader.render_prompt("", resume, jd)
 
     # Add current user message to history display
-    history = history + [[message, None]]
+    history = history + [{"role": "user", "content": message}]
     yield history, ""
 
     # Stream response from Claude
     full_response = ""
     stream_generator = chat_service.stream_message(api_messages, system_prompt)
 
+    # Add assistant message placeholder
+    history = history + [{"role": "assistant", "content": ""}]
+
     for chunk in stream_generator:
         full_response += chunk
         # Update the last message in history with accumulated response
-        history[-1][1] = full_response
+        history[-1]["content"] = full_response
         yield history, ""
 
     # Save assistant response to database
@@ -195,7 +198,7 @@ def create_interface():
 
         # Row 2: Chat interface
         chatbot = gr.Chatbot(
-            label="Chat with Career Advisor",
+            label="Chat with resume and job description",
             height=500,
         )
 
@@ -212,19 +215,17 @@ def create_interface():
         # Row 4: Two columns for resume and job description
         with gr.Row():
             with gr.Column(scale=1):
-                resume_display = gr.Textbox(
-                    label="Resume",
-                    lines=20,
-                    interactive=False,
-                    visible=False,
-                )
+                with gr.Accordion("Resume", open=True, visible=False) as resume_accordion:
+                    resume_display = gr.Markdown(
+                        value="",
+                        elem_classes=["document-display"],
+                    )
             with gr.Column(scale=1):
-                jd_display = gr.Textbox(
-                    label="Job Description",
-                    lines=20,
-                    interactive=False,
-                    visible=False,
-                )
+                with gr.Accordion("Job Description", open=True, visible=False) as jd_accordion:
+                    jd_display = gr.Markdown(
+                        value="",
+                        elem_classes=["document-display"],
+                    )
 
         # Load document on page load
         def on_load(request: gr.Request):
@@ -241,8 +242,10 @@ def create_interface():
                 sess_uuid,  # session_uuid_state
                 gr.update(interactive=chat_enabled),  # message_input
                 gr.update(interactive=chat_enabled),  # send_button
-                gr.update(value=resume, visible=resume_visible),  # resume_display
-                gr.update(value=jd, visible=jd_visible),  # jd_display
+                gr.update(visible=resume_visible),  # resume_accordion
+                gr.update(value=resume),  # resume_display
+                gr.update(visible=jd_visible),  # jd_accordion
+                gr.update(value=jd),  # jd_display
             )
 
         demo.load(
@@ -254,7 +257,9 @@ def create_interface():
                 session_uuid_state,
                 message_input,
                 send_button,
+                resume_accordion,
                 resume_display,
+                jd_accordion,
                 jd_display,
             ],
         )
